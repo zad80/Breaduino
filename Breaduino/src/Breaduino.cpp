@@ -53,16 +53,18 @@ void setup() {
 }
 bool start_pressed_short=false;
 bool start_pressed_long=false;
+bool seqStarted=false;
 bool change_lcd=true;
+long keep_seq_displayed=0;
 void loop() {
 
  Module::update(hw);
- if(start_bt.wasPressed(40)){
+ if(start_bt.isInShort()){
 	 start_pressed_short=true;
 	 if(!start_pressed_long){
 		 dLabel(&myLCD, 0, 0, 128, 25, "start", 0xffff, myLCD.setColour(0x00, 0x7f, 0), 0, 0, 9);
 	 }
-	 if(start_bt.wasPressed(1000)){
+	 if(start_bt.isInLong()){
 		 start_pressed_long=true;
 		 start_pressed_short=false;
 		 dLabel(&myLCD, 0, 0, 128, 25, "start", 0xffff, myLCD.setColour(0x7f, 0x00, 0x00), 0, 0, 9);
@@ -88,6 +90,33 @@ void loop() {
 	 start_pressed_short=false;
 	 start_pressed_long=false;
  }
+ /* print info for sequence test */
+ if(isExpired(keep_seq_displayed,2000)){
+	 if(start_bt.sequenceOnGoing()){
+		 seqStarted=true;
+		 dLabel(&myLCD, 0, 25+25, 128, 25, "seq", 0xffff, myLCD.setColour(0x00, 0x7f, 0), 0, 0, 9);
+	 }else{
+		 dLabel(&myLCD, 0, 25+25, 128, 25, "seq", 0xffff, myLCD.setColour(0x7f, 0x00, 0), 0, 0, 9);
+		 seqStarted=false;
+	 }
+ }
+ if(start_bt.isSequenceReady()){
+	 uint8_t s=0,l=0;
+	 if(start_bt.getSequence(&s,&l)){
+		 String toLcd="seq s="+String(s, DEC)+" l="+String(l,DEC);
+		 dLabel(&myLCD, 0, 25+75, 128, 25, toLcd, 0xffff, myLCD.setColour(0x00, 0x00, 0x7f), 0, 0, 9);
+	 }else{
+		 dLabel(&myLCD, 0, 25+75, 128, 25, "seq error", 0xffff, myLCD.setColour(0x00, 0x00, 0x7f), 0, 0, 9);
+	 }
+	 keep_seq_displayed=millis();
+ }else{
+	 dLabel(&myLCD, 0, 25+75, 128, 25, "", 0xffff, myLCD.setColour(0x00, 0x00, 0x7f), 0, 0, 9);
+ }
+ String toLcd="sr=";
+ toLcd.concat(start_bt.isSequenceReady()?"YES":"NO");
+ toLcd.concat(" so=");
+ toLcd.concat(start_bt.sequenceOnGoing()?"YES":"NO");
+ dLabel(&myLCD, 0, 25+50, 128, 25, toLcd, 0xffff, myLCD.setColour(0x00, 0x00, 0x00), 0, 0, 9);
 
 
 }
